@@ -216,7 +216,7 @@ ${extra ? '\nStudent\'s question: ' + extra : ''}`;
   // ---------- views ----------
   const NAV = [['home', 'Progress'], ['lessons', 'Lessons'], ['drills', 'Drills'], ['practice', 'Practice exam'], ['mock', 'Mock exam'], ['review', 'Review sheet']];
   function shell() {
-    return `<header class="top"><div class="brand"><div class="mark" aria-hidden="true">NPV</div><div><div class="bt">FIN 4453 Midterm II Trainer</div><div class="bs">Capital budgeting · Tue Oct 27, in class · <span id="cd">${countdown()}</span></div></div></div><div id="sync" class="sync" data-state="${S.sync}">${SYNC_TXT[S.sync]}</div></header>
+    return `<header class="top"><div class="brand"><div class="eyebrow">FIN 4453 · Financial Modeling &amp; Analytics</div><div class="bt">Midterm II Preparation</div><div class="bs">Module 3: capital budgeting, from NPV to stock price</div></div><div class="topr"><div class="eyebrow">Tue Oct 27 · In class</div><div class="cdbig" id="cd">${countdown()}</div><div id="sync" class="sync" data-state="${S.sync}">${SYNC_TXT[S.sync]}</div></div></header>
       <nav class="tabs" role="tablist">${NAV.map(([k, l]) => `<button role="tab" aria-selected="${S.view === k}" class="tab ${S.view === k ? 'on' : ''}" data-act="nav" data-v="${k}">${l}</button>`).join('')}</nav><main id="main"></main>`;
   }
   function render() {
@@ -238,18 +238,16 @@ ${extra ? '\nStudent\'s question: ' + extra : ''}`;
     const W = 260, H = 60, X = i => 6 + i * (W - 12) / (vals.length - 1), Y = v => H - 8 - v * (H - 16);
     return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Mock scores over time"><line class="grid" x1="6" x2="${W - 6}" y1="${Y(0.8)}" y2="${Y(0.8)}"/><text class="tick" x="${W - 6}" y="${Y(0.8) - 3}" text-anchor="end">80%</text><polyline class="sp" points="${vals.map((v, i) => `${X(i)},${Y(v)}`).join(' ')}"/>${vals.map((v, i) => `<circle class="${i === vals.length - 1 ? 'spe' : 'spd'}" cx="${X(i)}" cy="${Y(v)}" r="${i === vals.length - 1 ? 4.5 : 3}"/>`).join('')}</svg>`;
   }
-  function studyPlan(M) {
-    const d = Math.max(1, daysLeft()), P = S.prog, todo = C.LESSONS.filter(l => !P.lessons[l.id]), per = Math.ceil(todo.length / Math.max(1, d - 1 || 1));
-    const weak = nextUp(M, 2).map(n => n.s.name);
-    const items = [];
-    if (todo.length) items.push(`<li><b>Lessons:</b> ${todo.length} left. Do about ${Math.min(todo.length, per)} today, starting with <button class="link" data-act="lesson" data-l="${todo[0].id}">${esc(todo[0].title)}</button>. Each ends with a quick check.</li>`);
-    items.push(`<li><b>Drills:</b> 3–4 questions on ${esc(weak.join(' and '))}. Read every statement's explanation, including the ones you got right.</li>`);
-    if (!P.practice.length) items.push(`<li><b>Practice midterm:</b> take it once the lessons are done, ideally timed (Mock exam tab → "Practice midterm, timed").</li>`);
-    items.push(`<li><b>${daysLeft() <= 1 ? 'Tonight' : 'The night before'}:</b> one fresh mock under 75 minutes, then the Review sheet. Sleep beats a fourth mock.</li>`);
-    return `<div class="plan"><h2>Plan for ${daysLeft() <= 0 ? 'today' : daysLeft() === 1 ? 'the last day' : 'the next ' + daysLeft() + ' days'}</h2><ul>${items.join('')}</ul></div>`;
+  // the deck's three-stage process: Learn (navy) → Practice (steel) → Rehearse (outline)
+  function flowHTML(M) {
+    const P = S.prog, todo = C.LESSONS.filter(l => !P.lessons[l.id]), d = Math.max(1, daysLeft()), per = Math.max(1, Math.ceil(todo.length / Math.max(1, d - 1)));
+    const learn = todo.length ? todo.slice(0, Math.min(3, per)).map(l => `<button class="fbox f-navy" data-act="lesson" data-l="${l.id}">${esc(l.title)}<small>${esc(l.part)} · ${esc(l.slides)}</small></button>`).join('') + (todo.length > 3 ? `<button class="fbox f-navy done" data-act="nav" data-v="lessons">+ ${todo.length - Math.min(3, per)} more lessons<small>Aim for about ${per} a day</small></button>` : '') : '<button class="fbox f-navy done" data-act="nav" data-v="lessons">All 12 lessons complete<small>Revisit any lesson from the Lessons tab</small></button>';
+    const practice = nextUp(M, 3).map(n => `<button class="fbox f-steel" data-act="drill" data-d="${n.s.drill}">${esc(n.s.name)}<small>${esc(n.why)}</small></button>`).join('');
+    const rehearse = `<button class="fbox f-line" data-act="nav" data-v="practice">Practice midterm, question by question<small>${P.practice.length ? 'Checked ' + new Set(P.practice.map(p => p.q)).size + ' of 9 questions' : 'Not started'}</small></button><button class="fbox f-line" data-act="nav" data-v="mock">Timed 25-point mock<small>${P.mocks.length ? P.mocks.length + ' taken' : 'Best taken the night before'}</small></button><button class="fbox f-line" data-act="nav" data-v="review">Review sheet<small>Every rule to memorize; no formula sheet allowed</small></button>`;
+    return `<div class="flow"><div class="fcol"><div class="fh"><b>Learn:</b> lessons in slide order</div>${learn}</div><div class="fcol"><div class="fh"><b>Practice:</b> your weakest skills</div>${practice}</div><div class="fcol"><div class="fh"><b>Rehearse:</b> exam conditions</div>${rehearse}</div></div>`;
   }
   function homeView() {
-    const M = mastery(), R = readiness(M), nu = nextUp(M), P = S.prog;
+    const M = mastery(), R = readiness(M), P = S.prog;
     const lessonsDone = Object.keys(P.lessons).length, answered = P.attempts.filter(a => a.m !== 'lesson').length;
     const best = P.mocks.length ? Math.max(...P.mocks.map(m => m.sc)) : null;
     const today = P.attempts.filter(a => a.m !== 'lesson' && new Date(a.t).toDateString() === new Date().toDateString()).length;
@@ -260,22 +258,26 @@ ${extra ? '\nStudent\'s question: ' + extra : ''}`;
     const mist = P.mistakes.slice(-6).reverse().map(x => `<li><span><b>${esc(x.title)}</b><span class="muted small"> · ${esc((C.SKILLS[x.s] || {}).name || '')} · ${pct(x.sc)}</span></span><button class="btn sm ghost" data-act="retry" data-d="${x.d}" data-s="${x.seed}">Retry</button></li>`).join('');
     const prac = {}; P.practice.forEach(p => { prac[p.q] = Math.max(prac[p.q] || 0, p.sc); });
     const pracRow = ['A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'B2', 'B3', 'B4'].map(q => `<span class="pq-chip ${prac[q] == null ? '' : prac[q] >= 0.8 ? 'lv-solid' : prac[q] >= 0.5 ? 'lv-mid' : 'lv-weak'}" title="${q}">${q}${prac[q] != null ? ' ' + pct(prac[q]) : ''}</span>`).join('');
-    return `<section class="hero">
-      ${ring(R, 'ready')}
-      <div class="herotext"><h1>${R < 0.35 ? 'Let\'s build the base, Hanh.' : R < 0.7 ? 'Good momentum. Close the gaps.' : 'Exam-ready territory. Keep it warm.'}</h1>
-      <p class="muted">Readiness is your mastery across the 12 skills on the professor's prep list, weighted by how much of the exam each one carries. It only rises when you answer correctly.</p>
-      <div class="stats"><div><b>${answered}</b><span>answers</span></div><div><b>${today}</b><span>today</span></div><div><b>${lessonsDone}/12</b><span>lessons</span></div><div><b>${P.mocks.length}</b><span>mocks${best != null ? ` · best ${pts(best * 25)}/25` : ''}</span></div></div></div>
-    </section>
-    ${studyPlan(M)}
-    <section><h2>Work on next</h2><div class="nextgrid">${nu.map(n => `<div class="nextcard"><div class="nk">${esc(n.s.name)}</div><div class="muted small">${esc(n.why)}</div>${n.act === 'lesson' ? `<button class="btn" data-act="lesson" data-l="${n.L.id}">Lesson: ${esc(n.L.title)}</button>` : `<button class="btn" data-act="drill" data-d="${n.s.drill}">Drill it</button>`}</div>`).join('')}</div></section>
+    const dl = Math.max(0, daysLeft());
+    return `<section><h1>Midterm II at a glance</h1><p class="sub">${R < 0.35 ? 'Let\'s build the base, Hanh. Start with the lessons, then drill what\'s weakest.' : R < 0.7 ? 'Good momentum, Hanh. Close the gaps in the skills flagged below.' : 'Exam-ready territory, Hanh. Keep it warm with a timed mock.'}</p>
+      <div class="glance"><div class="glh">Progress at-a-glance</div><div class="glrow">
+        <div><b>${pct(R)}</b><span>Readiness across the 12 tested skills</span></div>
+        <div><b>${lessonsDone}<small>/12</small></b><span>Lessons completed</span></div>
+        <div><b>${answered}</b><span>Questions answered${today ? ` (${today} today)` : ''}</span></div>
+        <div><b>${best != null ? pts(best * 25) : '–'}</b><span>Best mock score out of 25</span></div>
+        <div><b>${dl}</b><span>${dl === 1 ? 'Day' : 'Days'} to the exam (Tue Oct 27)</span></div>
+      </div></div>
+      <h3 class="sh">How to get exam-ready</h3>
+      ${flowHTML(M)}
+      <p class="src">Readiness weights each skill by its share of the exam, inferred from the preparation note and the practice midterm. Practice skills are ranked by exam weight × gap to mastery.</p></section>
     <section><h2>Select-all discipline</h2><div class="disc"><div><b>${sa.length ? pts(avg) : '–'}</b><span>average / 2 pts</span></div><div><b>${perfect}</b><span>perfect scores</span></div><div><b class="${wrongTicks ? 'neg' : ''}">${wrongTicks}</b><span>wrong ticks (−1 each)</span></div><div><b>${missed}</b><span>correct statements missed</span></div></div>
-      <p class="muted small">${sa.length ? (wrongTicks > missed ? 'Wrong ticks are costing you more than missed statements. When you can\'t explain a statement, leave it blank: blank costs nothing.' : missed > wrongTicks * 2 ? 'You\'re careful, maybe too careful. If you can explain why a statement is true, tick it.' : 'Balanced. Keep ticking only what you can explain.') : 'Each select-all is worth 2 points: 2 × (correct ticked ÷ correct total), minus 1 for every wrong tick, floored at 0.'}</p></section>
-    <section><h2>Professor's prep-note checklist</h2><p class="muted small">Every concept from the Midterm II preparation note, with your current level.</p><div class="checklist">${check}</div></section>
-    <section><h2>Mastery by skill</h2><div class="sklist">${skillRows}</div></section>
+      <p class="muted small">${sa.length ? (wrongTicks > missed ? 'Wrong ticks are costing you more than missed statements. When you can\'t explain a statement, leave it blank: blank costs nothing.' : missed > wrongTicks * 2 ? 'You\'re careful, maybe too careful. If you can explain why a statement is true, tick it.' : 'Balanced. Keep ticking only what you can explain.') : 'Each select-all is worth 2 points: 2 × (correct ticked ÷ correct total), minus 1 for every wrong tick, floored at 0.'}</p><p class="src">Source: scoring rule from the FIN 4453 Midterm II Preparation Note.</p></section>
+    <section><h2>Coverage of the prep-note checklist</h2><div class="checklist">${check}</div><p class="src">Source: FIN 4453 Midterm II Preparation Note, "Concepts you are expected to know."</p></section>
+    <section><h2>Mastery by skill</h2><div class="sklist"><div class="skrow skhead"><div>Skill</div><div>Mastery</div><div class="skp">%</div><div></div></div>${skillRows}</div><p class="src">Mastery is a weighted average of recent answers; lesson checks count less than drills and mocks.</p></section>
     <section class="two"><div><h2>Mock exams</h2>${spark(P.mocks.map(m => m.sc))}${mocks ? `<ul class="mocklist">${mocks}</ul>` : '<p class="muted">No mock yet. Take one once the lessons feel comfortable: five select-all questions and four scenarios, 25 points, 75 minutes.</p>'}<button class="btn" data-act="nav" data-v="mock">Go to mock exam</button></div>
     <div><h2>Practice midterm</h2><div class="pqrow">${pracRow}</div><p class="muted small">Best score on each of the professor's nine practice questions.</p><button class="btn ghost" data-act="nav" data-v="practice">Open practice midterm</button>
     <h2>Recent misses</h2>${mist ? `<ul class="mistakes">${mist}</ul>` : '<p class="muted small">Questions you miss in drills land here so you can retry the exact same one.</p>'}</div></section>
-    <section><h2>Exam-day facts</h2><ul class="facts"><li>Tuesday, October 27, in class. 75 minutes, 25 points (12.5% of the grade).</li><li>Pen and paper, closed book. No notes, formula sheet, calculator or phone.</li><li>Every NPV, IRR and cash-flow figure is printed in the question. Only basic arithmetic.</li><li>Section A: five select-all questions, 2 points each. Section B: four scenarios, 15 points; a conclusion without reasoning earns at most half credit.</li></ul></section>`;
+    <section><h2>Key terms of the exam</h2><ul class="facts"><li>Tuesday, October 27, in class. 75 minutes, 25 points (12.5% of the grade).</li><li>Pen and paper, closed book. No notes, formula sheet, calculator or phone.</li><li>Every NPV, IRR and cash-flow figure is printed in the question. Only basic arithmetic.</li><li>Section A: five select-all questions, 2 points each. Section B: four scenarios, 15 points; a conclusion without reasoning earns at most half credit.</li></ul><p class="src">Source: FIN 4453 Midterm II Preparation Note; Practice Midterm II cover page.</p></section>`;
   }
 
   function lessonsView() {
@@ -293,7 +295,7 @@ ${extra ? '\nStudent\'s question: ' + extra : ''}`;
     }
     const nxt = C.LESSONS[i + 1], st = QS.get(S.lessonQ.id), sk = C.SKILLS[l.skills[0]];
     return `<div class="crumbs"><button class="link" data-act="lessons">← All lessons</button><span class="muted">Lesson ${i + 1} of ${C.LESSONS.length} · ${esc(l.part)} · ${esc(l.slides)}</span></div>
-    <article class="lesson"><h1>${esc(l.title)}</h1><div class="take"><span>The one-line idea</span>${l.take}</div>${fillFigs(l.body)}</article>
+    <article class="lesson"><div class="lbl">${esc(l.part)}</div><h1>${esc(l.title)}</h1><div class="take"><span>Key takeaway</span>${l.take}</div>${fillFigs(l.body)}<p class="src">Source: FIN 4453 Module 3 slides (${esc(l.slides)}); Cooper Dental model and Module 3 class workbook where cited.</p></article>
     ${qHTML(S.lessonQ.id, { footer: `<div class="qfoot">${st.graded ? `<b>${pct(qScore(S.lessonQ.id))}</b> on the quick check. ` + (nxt ? `<button class="btn" data-act="lesson" data-l="${nxt.id}">Next: ${esc(nxt.title)}</button>` : '<button class="btn" data-act="nav" data-v="practice">Go to the practice midterm</button>') + ` <button class="btn ghost" data-act="drill" data-d="${sk.drill}">Drill this skill</button>` : `<button class="btn" data-act="check" data-q="${S.lessonQ.id}">Check answers</button>`}</div>` })}`;
   }
 
@@ -316,7 +318,7 @@ ${extra ? '\nStudent\'s question: ' + extra : ''}`;
   // ----- practice midterm (study mode: check each question) -----
   function practiceView() {
     if (!S.prac) S.prac = { ids: C.practice().map(q => makeQ(q, 'practice')) };
-    return `<section><h1>Practice Midterm II</h1><p class="muted">The professor's real practice questions. Check each one on its own and read every explanation. The answer key and model answers were written for this trainer from the slides and class materials, not by the professor. To take it under exam conditions, use Mock exam → Practice midterm, timed.</p></section>
+    return `<section><h1>Practice Midterm II</h1><p class="muted">The professor's real practice questions. Check each one on its own and read every explanation. The answer key and model answers were written for this trainer from the slides and class materials, not by the professor. To take it under exam conditions, use Mock exam → Practice midterm, timed.</p><p class="src">Source: FIN 4453 Practice Midterm II (Module 3: Capital Budgeting). Answer key prepared for this trainer.</p></section>
     ${S.prac.ids.map(id => { const st = QS.get(id), { a, b } = qPts(id); return qHTML(id, { footer: st.graded ? `<div class="qfoot"><b>${pts(a)} / ${pts(b)}</b> points. <button class="btn ghost" data-act="pracreset" data-q="${id}">Try again</button></div>${askBox(id)}` : `<div class="qfoot"><button class="btn" data-act="check" data-q="${id}">Check this question</button></div>` }); }).join('')}`;
   }
 

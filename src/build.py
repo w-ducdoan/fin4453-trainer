@@ -11,7 +11,7 @@ read = lambda f: (here / f).read_text(encoding='utf-8')
 js = '\n'.join(read(f) for f in ['engine.js', 'content.js', 'gens.js', 'app.js'])
 js = re.sub(r"^if \(typeof module !== 'undefined'\).*$", '', js, flags=re.M)
 fonts = ('<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
-         '<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@400;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">\n')
+         '<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">\n')
 style = '<style>\n' + read('style.css') + '\n</style>\n'
 app = '<div id="app"></div>\n<script>\n' + js + '\n</script>\n'
 title = '<title>FIN 4453 Midterm II Trainer</title>\n'
