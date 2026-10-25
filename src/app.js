@@ -240,7 +240,7 @@ ${extra ? '\nStudent\'s question: ' + extra : ''}`;
   }
   function studyPlan(M) {
     const d = Math.max(1, daysLeft()), P = S.prog, todo = C.LESSONS.filter(l => !P.lessons[l.id]), per = Math.ceil(todo.length / Math.max(1, d - 1 || 1));
-    const weak = nextUp(M, 2).map(n => n.s.name.toLowerCase());
+    const weak = nextUp(M, 2).map(n => n.s.name);
     const items = [];
     if (todo.length) items.push(`<li><b>Lessons:</b> ${todo.length} left. Do about ${Math.min(todo.length, per)} today, starting with <button class="link" data-act="lesson" data-l="${todo[0].id}">${esc(todo[0].title)}</button>. Each ends with a quick check.</li>`);
     items.push(`<li><b>Drills:</b> 3–4 questions on ${esc(weak.join(' and '))}. Read every statement's explanation, including the ones you got right.</li>`);
@@ -301,7 +301,7 @@ ${extra ? '\nStudent\'s question: ' + extra : ''}`;
   function drillsView() {
     const M = mastery(), top = nextUp(M, 1)[0];
     return `<section><h1>Drills</h1><p class="muted">Every drill builds a fresh question in the exam's format with new numbers. After you check, every statement shows whether ticking it earned or cost you points, and why.</p>
-    <div class="smart"><div><b>Not sure where to start?</b><span class="muted small"> Smart pick: your weakest, highest-weight skill right now is ${esc(top.s.name.toLowerCase())}.</span></div><button class="btn" data-act="drill" data-d="${top.s.drill}">Start smart pick</button></div>
+    <div class="smart"><div><b>Not sure where to start?</b><span class="muted small"> Smart pick: your weakest, highest-weight skill right now is ${esc(top.s.name)}.</span></div><button class="btn" data-act="drill" data-d="${top.s.drill}">Start smart pick</button></div>
     <h2>Section A: select all that apply</h2><div class="drillgrid">${G.DRILLS.map(d => drillCard(d, M)).join('')}</div>
     <h2>Section B: written scenarios</h2><p class="muted small">Write the conclusion in a full sentence, then the reasoning. ${S.sample ? 'Claude grades each part against the key points.' : 'Grade yourself against the key points and the model answer.'}</p><div class="drillgrid">${G.SCEN.map(d => drillCard(d, M)).join('')}</div></section>`;
   }
